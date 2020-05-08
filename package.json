@@ -1,0 +1,11 @@
+{
+  "name": "extension",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/chrome": "^0.0.106"
+  }
+}
