@@ -10,9 +10,10 @@ class TabEnvManager {
     path: './assets/icon-on.png',
   }
   constructor() {
-    this._setBadgeContent = this.setBadgeContent.bind(this)
-    this._getLocalStorage = this.getLocalStorage.bind(this);
-    this._setLocalStorage = this.setLocalStorage.bind(this);
+    this._extensionStorage = extensionStorage
+    this._extensionTabs = extensionTabs
+    this._extensionMessenger = extensionMessenger
+    this._setBadgeContent = this.setBadgeContent.bind(this);
     this._onBrowserActionClicked = this.onBrowserActionClicked.bind(this);
     this._onDisabled = this.onDisabled.bind(this);
     this._onEnabled = this.onEnabled.bind(this);
@@ -27,32 +28,7 @@ class TabEnvManager {
     chrome.browserAction.setIcon({ path })
   }
 
-  /**
-   * 
-   * @param {string} prop 
-   */
-  getLocalStorage(prop) {
-    return new Promise((resolve, reject) => {
-      chrome.storage.local.get([prop], (storage) => {
-        if (typeof storage[prop] !== 'undefined') {
-          resolve(storage[prop])
-        } else {
-          reject('Enabled is not defined')
-        }
-      })
-    })
-  }
-
-  /**
-   * 
-   * @param {string} prop 
-   * @param {any} value 
-   */
-  setLocalStorage(prop, value) {
-    chrome.storage.local.set({ [prop]: value })
-  }
-
-  onDisabled() {
+  async onDisabled() {
     const { text, color, path } = TabEnvManager.badgeOn
     this._setBadgeContent({
       text,
@@ -60,10 +36,28 @@ class TabEnvManager {
       path,
     })
 
-    this._setLocalStorage('enabled', true)
+    this._extensionStorage.set('enabled', true)
+
+    try {
+      const tabIds = await this._extensionTabs.getIdsForDomain('inyourarea')
+
+      tabIds.forEach(id => {
+        this._extensionMessenger.send(
+          chrome.tabs,
+          id,
+          { action: 'enable' },
+          links => {
+            this._extensionStorage.set('links', links)
+            this._extensionStorage.set('tabIds', tabIds)
+          }
+        )
+      })
+    } catch (error) {
+      console.error(error)
+    }
   }
 
-  onEnabled() {
+  async onEnabled() {
     const { text, color, path } = TabEnvManager.badgeOff
 
     this._setBadgeContent({
@@ -72,12 +66,29 @@ class TabEnvManager {
       path,
     })
 
-    this._setLocalStorage('enabled', false)
+    this._extensionStorage.set('enabled', false);
+
+    try {
+      const { links, tabIds } = await this._extensionStorage.get(['links', 'tabIds'])
+
+      tabIds.forEach(id => {
+        this._extensionMessenger.send(
+          chrome.tabs,
+          id,
+          { action: 'disable', links }
+        )
+      });
+
+      this._extensionStorage.remove(['links', 'tabIds'])
+
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   async onBrowserActionClicked() {
     try {
-      const enabled = await this._getLocalStorage('enabled')
+      const enabled = await this._extensionStorage.get('enabled')
 
       if (!enabled) {
         this.onDisabled()
