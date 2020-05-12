@@ -47,7 +47,12 @@ class TabEnvManager {
           id,
           { action: 'enable' },
           links => {
-            this._extensionStorage.set('links', links)
+            if (chrome.runtime.lastError) {
+              console.log('onDisabled in bg script', chrome.runtime.lastError.message)
+            }
+            if (links) {
+              this._extensionStorage.set('links', links)
+            }
             this._extensionStorage.set('tabIds', tabIds)
           }
         )
