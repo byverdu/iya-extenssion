@@ -1,3 +1,24 @@
+const OPTIONS_SAVED = 'optionsSaved'
+const EXTENSION_ENABLED = 'extensionEnabled'
+const EXTENSION_DISABLED = 'extensionDisabled'
+
+/**
+ * @param {string} action
+ * @param {Object} msg
+ */
+const setAction = (action, msg = {}) => {
+  const actions = [
+    OPTIONS_SAVED,
+    EXTENSION_ENABLED,
+    EXTENSION_DISABLED
+  ]
+
+  return {
+    action: actions.find(item => item === action),
+    ...msg
+  }
+}
+
 const extensionStorage = {
   /**
    * 
@@ -12,7 +33,7 @@ const extensionStorage = {
           if (typeof prop === 'string') resolve(storage[prop])
           if (typeof prop === 'object') resolve(storage)
         } else {
-          reject('Enabled is not defined')
+          reject(`${prop} is not defined in chrome.storage.local`)
         }
       })
     })

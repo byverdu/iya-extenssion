@@ -36,6 +36,6 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (chrome.runtime.lastError) {
     console.log('onMessage', chrome.runtime.lastError.message)
   }
-  if (msg && msg.action && msg.action === 'enable') onEnabled(sendResponse)
-  if (msg && msg.action && msg.action === 'disable') onDisabled(msg.links)
+  if (msg && msg.action && msg.action === EXTENSION_ENABLED) onEnabled(sendResponse)
+  if (msg && msg.action && msg.action === EXTENSION_DISABLED) onDisabled(msg.links)
 })

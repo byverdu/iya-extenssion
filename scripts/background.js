@@ -12,9 +12,9 @@ class TabEnvManager {
   constructor() {
     this._extensionStorage = extensionStorage
     this._extensionTabs = extensionTabs
-    this._extensionMessenger = extensionMessenger
     this._setBadgeContent = this.setBadgeContent.bind(this);
     this._onBrowserActionClicked = this.onBrowserActionClicked.bind(this);
+    this._onDisabledMsgCallback = this.onDisabledMsgCallback.bind(this);
     this._onDisabled = this.onDisabled.bind(this);
     this._onEnabled = this.onEnabled.bind(this);
   }
@@ -26,6 +26,21 @@ class TabEnvManager {
     chrome.browserAction.setBadgeText({ text })
     chrome.browserAction.setBadgeBackgroundColor({ color })
     chrome.browserAction.setIcon({ path })
+  }
+
+  /**
+   * 
+   * @param {string[]} links 
+   * @param {number[]} tabIds 
+   */
+  onDisabledMsgCallback(links, tabIds) {
+    if (chrome.runtime.lastError) {
+      console.log('onDisabled in bg script', chrome.runtime.lastError.message)
+    }
+    if (links) {
+      this._extensionStorage.set('links', links)
+    }
+    this._extensionStorage.set('tabIds', tabIds)
   }
 
   async onDisabled() {
@@ -42,19 +57,10 @@ class TabEnvManager {
       const tabIds = await this._extensionTabs.getIdsForDomain('inyourarea')
 
       tabIds.forEach(id => {
-        this._extensionMessenger.send(
-          chrome.tabs,
+        chrome.tabs.sendMessage(
           id,
-          { action: 'enable' },
-          links => {
-            if (chrome.runtime.lastError) {
-              console.log('onDisabled in bg script', chrome.runtime.lastError.message)
-            }
-            if (links) {
-              this._extensionStorage.set('links', links)
-            }
-            this._extensionStorage.set('tabIds', tabIds)
-          }
+          setAction(EXTENSION_ENABLED),
+          links => this._onDisabledMsgCallback(links, tabIds)
         )
       })
     } catch (error) {
@@ -77,10 +83,9 @@ class TabEnvManager {
       const { links, tabIds } = await this._extensionStorage.get(['links', 'tabIds'])
 
       tabIds.forEach(id => {
-        this._extensionMessenger.send(
-          chrome.tabs,
+        chrome.tabs.sendMessage(
           id,
-          { action: 'disable', links }
+          setAction(EXTENSION_DISABLED, { links }),
         )
       });
 
