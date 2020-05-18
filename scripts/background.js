@@ -9,6 +9,7 @@ class TabEnvManager {
     text: 'ON',
     path: './assets/icon-on.png',
   }
+
   constructor() {
     this._extensionStorage = extensionStorage
     this._extensionTabs = extensionTabs
@@ -55,8 +56,6 @@ class TabEnvManager {
   async onDisabled() {
     try {
       const inputs = await this._extensionStorage.get('inputs')
-      const {prod, stag, localhost, icon, name} = inputs
-      const envs = envOptionsValidator({prod, stag, localhost })
 
       const { text, color, path } = TabEnvManager.badgeOn
       this._setBadgeContent({
@@ -67,23 +66,28 @@ class TabEnvManager {
   
       this._extensionStorage.set('enabled', true)
 
-      envs.forEach(async ({env, value}) => {
-        try {
-          const tabIds = await this._extensionTabs.getIdsForDomain(value)
-    
-          tabIds.forEach(id => {
-            chrome.tabs.sendMessage(
-              id,
-              setAction(EXTENSION_ENABLED, { env, icon, name }),
-              links => {
-                console.log({[id]: links})
-                this._onDisabledMsgCallback({[id]: links}, tabIds)
-              }
-            )
-          })
-        } catch (error) {
-          console.error(error)
-        }
+      Object.keys(inputs).forEach(input => {
+        const {prod, stag, localhost, icon, name} = inputs[input]
+        const selectedEnvs = envOptionsValidator({prod, stag, localhost })
+        
+        selectedEnvs.forEach(async ({env, host}) => {
+          try {
+            const tabIds = await this._extensionTabs.getIdsForDomain(host)
+      
+            tabIds.forEach(id => {
+              chrome.tabs.sendMessage(
+                id,
+                setAction(EXTENSION_ENABLED, { env, icon, name }),
+                links => {
+                  console.log({[id]: links})
+                  this._onDisabledMsgCallback({[id]: links}, tabIds)
+                }
+              )
+            })
+          } catch (error) {
+            console.error(error)
+          }
+        })
       })
 
     } catch (error) {

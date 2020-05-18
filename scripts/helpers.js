@@ -158,7 +158,7 @@ function svgToDataUri ({icon = 'rocket', env = 'prod'}) {
 /**
  * @typedef {Object} ValidatedOptions
  * @property {string} env - env
- * @property {string} value - value url
+ * @property {string} host - value url
  */
 
 /**
@@ -170,9 +170,9 @@ function envOptionsValidator ({prod, stag, localhost}) {
   const hasProd = prod && prod.length > 1;
   const hasStag = stag && stag.length > 1;
   const hasLocalhost = localhost && localhost.length > 1;
-  const result = (env, value) => ({
+  const result = (env, host) => ({
     env,
-    value
+    host
   })
 
   return [
