@@ -1,4 +1,4 @@
-function onEnabled(sendResponse) {
+function onEnabled({env, icon, name}, sendResponse) {
   if (chrome.runtime.lastError) {
     console.log('onEnabled', chrome.runtime.lastError.message)
   }
@@ -8,8 +8,9 @@ function onEnabled(sendResponse) {
 
   const head = document.querySelector('head')
   const link = document.createElement('link');
+  document.title = `${env} - ${name}`.toUpperCase()
   link.rel = 'icon';
-  link.href = buildCanvasIcon();
+  link.href = svgToDataUri({env, icon});
   link.className = 'icon-rel'
   head.appendChild(link)
 
@@ -36,6 +37,6 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (chrome.runtime.lastError) {
     console.log('onMessage', chrome.runtime.lastError.message)
   }
-  if (msg && msg.action && msg.action === EXTENSION_ENABLED) onEnabled(sendResponse)
+  if (msg && msg.action && msg.action === EXTENSION_ENABLED) onEnabled(msg, sendResponse)
   if (msg && msg.action && msg.action === EXTENSION_DISABLED) onDisabled(msg.links)
 })
