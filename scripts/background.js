@@ -40,7 +40,7 @@ class TabEnvManager {
    */
   async onDisabledMsgCallback(newLinks, newTabIds) {
     if (chrome.runtime.lastError) {
-      console.log('onDisabled in bg script', chrome.runtime.lastError.message)
+      tabEnvLogger.log('warn', `onDisabled => ${chrome.runtime.lastError.message}`)
     }
 
     this.allTabsIds.push(...newTabIds)
@@ -63,17 +63,17 @@ class TabEnvManager {
         color,
         path,
       })
-  
+
       this._extensionStorage.set('enabled', true)
 
       Object.keys(inputs).forEach(input => {
-        const {prod, stag, localhost, icon, name} = inputs[input]
-        const selectedEnvs = envOptionsValidator({prod, stag, localhost })
-        
-        selectedEnvs.forEach(async ({env, host}) => {
+        const { prod, stag, localhost, icon, name } = inputs[input]
+        const selectedEnvs = envOptionsValidator({ prod, stag, localhost })
+
+        selectedEnvs.forEach(async ({ env, host }) => {
           try {
             const tabIds = await this._extensionTabs.getIdsForDomain(host)
-      
+
             tabIds.forEach(id => {
               chrome.tabs.sendMessage(
                 id,
@@ -85,7 +85,7 @@ class TabEnvManager {
               )
             })
           } catch (error) {
-            console.error(error)
+            tabEnvLogger.log('error', error)
           }
         })
       })
@@ -107,10 +107,10 @@ class TabEnvManager {
     this._extensionStorage.set('enabled', false);
 
     try {
-      const {links, tabIds} = await this._extensionStorage.get(['links', 'tabIds'])
+      const { links, tabIds } = await this._extensionStorage.get(['links', 'tabIds'])
 
       tabIds.forEach(id => {
-        chrome.tabs.sendMessage(  
+        chrome.tabs.sendMessage(
           id,
           setAction(EXTENSION_DISABLED, { links: links[id] }),
         )
@@ -122,7 +122,7 @@ class TabEnvManager {
       })
 
     } catch (error) {
-      console.error(error)
+      tabEnvLogger.log('error', error)
     }
   }
 
@@ -130,14 +130,12 @@ class TabEnvManager {
     try {
       const enabled = await this._extensionStorage.get('enabled')
 
-      if (!enabled) {
+      enabled ?
+        this.onEnabled() :
         this.onDisabled()
-      }
-      if (enabled) {
-        this.onEnabled()
-      }
+
     } catch (error) {
-      console.error(error)
+      tabEnvLogger.log('error', error)
     }
   }
 
@@ -155,6 +153,7 @@ class TabEnvManager {
   }
 
   init() {
+    tabEnvLogger.log('info', 'init extension')
     chrome.runtime.onInstalled.addListener(() => {
       const { text, color, path } = TabEnvManager.badgeOff
 

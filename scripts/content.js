@@ -1,6 +1,6 @@
-function onEnabled({env, icon, name}, sendResponse) {
+function onEnabled({ env, icon, name }, sendResponse) {
   if (chrome.runtime.lastError) {
-    console.log('onEnabled', chrome.runtime.lastError.message)
+    tabEnvLogger.log('warn', `onEnabled => ${chrome.runtime.lastError.message}`)
   }
   const links = Array.from(document.querySelectorAll('link[rel*=icon]')).map(item => item.outerHTML)
 
@@ -10,7 +10,7 @@ function onEnabled({env, icon, name}, sendResponse) {
   const link = document.createElement('link');
   document.title = `${env} - ${name}`.toUpperCase()
   link.rel = 'icon';
-  link.href = svgToDataUri({env, icon});
+  link.href = svgToDataUri({ env, icon });
   link.className = 'icon-rel'
   head.appendChild(link)
 
@@ -21,7 +21,7 @@ function onEnabled({env, icon, name}, sendResponse) {
 
 function onDisabled(links) {
   if (chrome.runtime.lastError) {
-    console.log('onDisabled', chrome.runtime.lastError.message)
+    tabEnvLogger.log('warn', `onDisabled => ${chrome.runtime.lastError.message}`)
   }
   document.querySelector('.icon-rel').remove()
   const head = document.querySelector('head')
@@ -35,7 +35,7 @@ function onDisabled(links) {
 
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (chrome.runtime.lastError) {
-    console.log('onMessage', chrome.runtime.lastError.message)
+    tabEnvLogger.log('warn', `onMessage => ${chrome.runtime.lastError.message}`)
   }
   if (msg && msg.action && msg.action === EXTENSION_ENABLED) onEnabled(msg, sendResponse)
   if (msg && msg.action && msg.action === EXTENSION_DISABLED) onDisabled(msg.links)

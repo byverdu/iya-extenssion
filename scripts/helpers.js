@@ -182,3 +182,27 @@ function envOptionsValidator ({prod, stag, localhost}) {
   ].filter(Boolean)
 }
 
+const logger = () => {
+  const types = {
+    error: console.error,
+    info: console.info,
+    warn: console.warn,
+    alert: alert
+  }
+
+  /**
+   * @param {"error" | "info" | "warn" | "alert"} type 
+   * @param {string} message 
+   */
+  function log (type, message) {
+    types[type](`TabEnvLogger ${message}`)
+  }
+
+  return {
+    log
+  }
+}
+
+const tabEnvLogger = logger()
+
+tabEnvLogger.log('error', 'bananas')
