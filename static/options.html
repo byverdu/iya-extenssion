@@ -6,9 +6,86 @@
   <link href="mui.min.css" rel="stylesheet" type="text/css" />
   <script src="mui.min.js"></script>
   <style>
-    body{background: black;}
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300&display=swap');
+
+    body {
+      background: black;
+      font-family: 'Fira Code', monospace;
+    }
+
     .header {
       padding: 10px;
+    }
+
+    /* Dropdown */
+    .mui-dropdown__menu {
+      min-width: 129px;
+      border-radius: 0 0 2px 2px;
+      max-height: 370px;
+      overflow-y: scroll;
+    }
+
+    .mui-dropdown__menu::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .mui-dropdown__menu::-webkit-scrollbar-track {
+      background: #ddd;
+    }
+
+    .mui-dropdown__menu::-webkit-scrollbar-thumb {
+      background: #2196F3ed;
+    }
+
+    /* Dropdown > btn */
+    .mui-dropdown .mui-btn {
+      border-radius: 2px 2px 0 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .mui-dropdown .mui-btn .icon path {
+      fill: white;
+    }
+
+    /* Dropdown > item */
+    .mui-dropdown__menu li {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 6px 0;
+      padding: 6px;
+      z-index: 1;
+    }
+
+    .mui-dropdown__menu svg {
+      z-index: -1;
+    }
+
+    .mui-dropdown__menu li:hover {
+      box-shadow: 0 0 1px;
+    }
+
+    .mui-dropdown__menu li:hover path,
+    .mui-dropdown__menu li:hover rect {
+      fill: #F44336;
+      opacity: .7;
+    }
+
+    /* Dropdown > svg */
+    .mui-dropdown .icon path,
+    .mui-dropdown .icon rect {
+      fill: #2196F3
+    }
+
+    .mui-dropdown .icon {
+      width: 50px;
+      height: 50px;
+    }
+
+    .mui-dropdown .mui-btn .icon {
+      width: 30px;
+      height: 30px;
     }
   </style>
 </head>
@@ -19,112 +96,27 @@
       <div class="mui-col-md-12">
         <h1 class="mui--text-display3 mui--bg-primary mui--text-light header">TabEnvManager Options</h1>
         <h4 class="mui--text-display1">Add Application Values</h4>
-        <!-- <form class="mui-form js-form-content" novalidate>
-          <fieldset>
-            <legend>Application 1</legend>
-            <div class="mui-textfield mui-textfield--float-label">
-              <input name="name" id="app-name" type="text">
-              <label for="app-name">Name</label>
-            </div>
-            <div class="mui-textfield mui-textfield--float-label">
-              <input name="prod" id="app-prod" type="text">
-              <label for="app-prod">Prod URL</label>
-            </div>
-            <div class="mui-textfield mui-textfield--float-label">
-              <input name="stag" id="app-stag" type="text">
-              <label for="app-stag">Stag URL</label>
-            </div>
-            <div class="mui-textfield mui-textfield--float-label">
-              <input name="localhost" id="app-localhost" type="text">
-              <label for="app-localhost">Localhost URL</label>
-            </div>
-          </fieldset>
-          <button type="submit" class="mui-btn mui-btn--raised">Submit</button>
-        </form> -->
         <table class="mui-table">
           <thead>
             <tr>
-              <th></th>
-              <th>Name</th>
+              <th>
+                <button class="mui-btn mui-btn--small mui-btn--primary js-clone-node">
+                  Add App
+                </button>
+              </th>
+              <th>* Name</th>
               <th>Prod URL</th>
               <th>Stag URL</th>
               <th>Localhost URL</th>
-              <th>Color</th>
+              <th>Icon</th>
               <th></th>
             </tr>
           </thead>
-          <tbody>
-            <tr class="app-row">
-              <td>
-                <button class="mui-btn mui-btn--small mui-btn--primary">&#9547;</button>
-              </td>
-              <td>
-                <div class="mui-textfield">
-                  <input value="web" name="name" id="app-name" type="text">
-                </div>
-              </td>
-              <td>
-                <div class="mui-textfield">
-                  <input value="https://www.inyourarea.co.uk/" name="prod" id="app-prod" type="text">
-                </div>
-              </td>
-              <td>
-                <div class="mui-textfield">
-                  <input value="https://www.stag.inyourarea.co.uk/" name="stag" id="app-stag" type="text">
-                </div>
-              </td>
-              <td>
-                <div class="mui-textfield">
-                  <input name="localhost" id="app-localhost" type="text">
-                </div>
-              </td>
-              <td>
-                <div class="mui-textfield">
-                  <input value="rocket" name="icon" id="app-icon" >
-                </div>
-              </td>
-              <td>
-                <button class="mui-btn mui-btn--small mui-btn--danger">&#65794;</button>
-              </td>
-            </tr>
-            <tr class="app-row">
-              <td>
-                <button class="mui-btn mui-btn--small mui-btn--primary">&#9547;</button>
-              </td>
-              <td>
-                <div class="mui-textfield">
-                  <input value="cms" name="name" id="app-name" type="text">
-                </div>
-              </td>
-              <td>
-                <div class="mui-textfield">
-                  <input value="https://cms.inyourarea.co.uk" name="prod" id="app-prod" type="text">
-                </div>
-              </td>
-              <td>
-                <div class="mui-textfield">
-                  <input value="https://cms-stag.inyourarea.co.uk" name="stag" id="app-stag" type="text">
-                </div>
-              </td>
-              <td>
-                <div class="mui-textfield">
-                  <input value="http://localhost:8082" name="localhost" id="app-localhost" type="text">
-                </div>
-              </td>
-              <td>
-                <div class="mui-textfield">
-                  <input value="bulb" name="icon" id="app-icon" >
-                </div>
-              </td>
-              <td>
-                <button class="mui-btn mui-btn--small mui-btn--danger">&#65794;</button>
-              </td>
-            </tr>
-          </tbody>
+          <tbody class="js-app-row-target"></tbody>
           <tfoot>
             <tr>
               <td>
-                <button class="mui-btn mui-btn--raised js-save-options">Save</button>
+                <button disabled class="mui-btn mui-btn--raised js-save-options">Save</button>
               </td>
             </tr>
           </tfoot>

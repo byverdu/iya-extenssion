@@ -67,42 +67,44 @@ class TabEnvManager {
   async onDisabled() {
     try {
       const inputs = await this._extensionStorage.get('inputs')
+      const inputsKeys = Object.keys(inputs)
 
-      const { text, color, path } = TabEnvManager.badgeOn
-      this._setBadgeContent({
-        text,
-        color,
-        path,
-      })
-
-      this._extensionStorage.set('enabled', true)
-
-      Object.keys(inputs).forEach(input => {
-        const { prod, stag, localhost, icon, name } = inputs[input]
-        const selectedEnvs = envOptionsValidator({ prod, stag, localhost })
-
-        selectedEnvs.forEach(async ({ env, host }) => {
-          try {
-            const tabIds = await this._extensionTabs.getIdsForDomain(host)
-
-            tabIds.forEach(id => {
-              chrome.tabs.sendMessage(
-                id,
-                setAction(EXTENSION_ENABLED, { env, icon, name }),
-                links => {
-                  console.log({[id]: links})
-                  this._onDisabledMsgCallback({[id]: links}, tabIds)
-                }
-              )
-            })
-          } catch (error) {
-            tabEnvLogger.log('error', error)
-          }
+      if (inputsKeys.length > 0) {
+        const { text, color, path } = TabEnvManager.badgeOn
+        this._setBadgeContent({
+          text,
+          color,
+          path,
         })
-      })
 
+        this._extensionStorage.set('enabled', true)
+
+        inputsKeys.forEach((input) => {
+          const { prod, stag, localhost, icon, name } = inputs[input]
+          const selectedEnvs = envOptionsValidator({ prod, stag, localhost })
+
+          selectedEnvs.forEach(async ({ env, host }) => {
+            try {
+              const tabIds = await this._extensionTabs.getIdsForDomain(host)
+
+              tabIds.forEach((id) => {
+                chrome.tabs.sendMessage(
+                  id,
+                  setAction(EXTENSION_ENABLED, { env, icon, name }),
+                  (links) => {
+                    console.log({ [id]: links })
+                    this._onDisabledMsgCallback({ [id]: links }, tabIds)
+                  }
+                )
+              })
+            } catch (error) {
+              tabEnvLogger.log('error', error)
+            }
+          })
+        })
+      }
     } catch (error) {
-      alert(error)
+      alert('You must set some options')
     }
   }
 
@@ -134,7 +136,6 @@ class TabEnvManager {
         this.allLinks = {}
         this.allTabsIds = []
       })
-
     } catch (error) {
       tabEnvLogger.log('error', error)
     }
@@ -159,7 +160,12 @@ class TabEnvManager {
   runtimeMsgHandler(msg, sender, sendResponse) {
     if (msg && msg.action && msg.action === OPTIONS_SAVED) {
       console.log(msg)
-      this._extensionStorage.set('inputs', {...msg.inputs});
+      this._extensionStorage.get('inputs').then((resp) => {
+        this._extensionStorage.set('inputs', [
+          ...msg.inputs,
+          ...(resp ? resp : []),
+        ])
+      })
     }
   }
 
@@ -177,14 +183,9 @@ class TabEnvManager {
     })
 
     chrome.browserAction.onClicked.addListener(this._onBrowserActionClicked)
-
     chrome.runtime.onMessage.addListener(this._runtimeMsgHandler)
   }
 }
 
 window.tabEnvManager = new TabEnvManager()
 window.tabEnvManager.init()
-
-chrome.tabs.onUpdated.addListener(() => {
-  console.log('yeah!!!!')
-})
