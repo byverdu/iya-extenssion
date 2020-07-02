@@ -13,20 +13,21 @@ class TabEnvManager {
   constructor() {
     this._extensionStorage = extensionStorage
     this._extensionTabs = extensionTabs
-    this._setBadgeContent = this.setBadgeContent.bind(this);
-    this._onBrowserActionClicked = this.onBrowserActionClicked.bind(this);
-    this._onDisabledMsgCallback = this.onDisabledMsgCallback.bind(this);
-    this._onDisabled = this.onDisabled.bind(this);
-    this._onEnabled = this.onEnabled.bind(this);
-    this._runtimeMsgHandler = this.runtimeMsgHandler.bind(this);
+    this._setBadgeContent = this.setBadgeContent.bind(this)
+    this._onBrowserActionClicked = this.onBrowserActionClicked.bind(this)
+    this._onDisabledMsgCallback = this.onDisabledMsgCallback.bind(this)
+    this._onDisabled = this.onDisabled.bind(this)
+    this._onEnabled = this.onEnabled.bind(this)
+    this._runtimeMsgHandler = this.runtimeMsgHandler.bind(this)
+    this._recoverPreviousState = this.recoverPreviousState.bind(this)
 
     this.allLinks = {}
     this.allTabsIds = []
   }
 
   /**
- * @param {{text: string, color: string, path: string}} Obj
- */
+   * @param {{text: string, color: string, path: string}} Obj
+   */
   setBadgeContent({ text, color, path }) {
     chrome.browserAction.setBadgeText({ text })
     chrome.browserAction.setBadgeBackgroundColor({ color })
@@ -34,19 +35,22 @@ class TabEnvManager {
   }
 
   /**
-   * 
-   * @param {string[]} newLinks 
-   * @param {number[]} newTabIds 
+   *
+   * @param {string[]} newLinks
+   * @param {number[]} newTabIds
    */
   async onDisabledMsgCallback(newLinks, newTabIds) {
     if (chrome.runtime.lastError) {
-      tabEnvLogger.log('warn', `onDisabled => ${chrome.runtime.lastError.message}`)
+      tabEnvLogger.log(
+        'warn',
+        `onDisabled => ${chrome.runtime.lastError.message}`
+      )
     }
 
     this.allTabsIds.push(...newTabIds)
     this.allLinks = {
       ...this.allLinks,
-      ...newLinks
+      ...newLinks,
     }
 
     this._extensionStorage.set('links', this.allLinks)
@@ -104,17 +108,20 @@ class TabEnvManager {
       path,
     })
 
-    this._extensionStorage.set('enabled', false);
+    this._extensionStorage.set('enabled', false)
 
     try {
-      const { links, tabIds } = await this._extensionStorage.get(['links', 'tabIds'])
+      const { links, tabIds } = await this._extensionStorage.get([
+        'links',
+        'tabIds',
+      ])
 
-      tabIds.forEach(id => {
+      tabIds.forEach((id) => {
         chrome.tabs.sendMessage(
           id,
-          setAction(EXTENSION_DISABLED, { links: links[id] }),
+          setAction(EXTENSION_DISABLED, { links: links[id] })
         )
-      });
+      })
 
       this._extensionStorage.remove(['tabIds', 'links'], () => {
         this.allLinks = {}
@@ -130,20 +137,17 @@ class TabEnvManager {
     try {
       const enabled = await this._extensionStorage.get('enabled')
 
-      enabled ?
-        this.onEnabled() :
-        this.onDisabled()
-
+      enabled ? this.onEnabled() : this.onDisabled()
     } catch (error) {
       tabEnvLogger.log('error', error)
     }
   }
 
   /**
-   * 
-   * @param {any} msg 
-   * @param {chrome.runtime.MessageSender} sender 
-   * @param {(resp) => void} sendResponse 
+   *
+   * @param {any} msg
+   * @param {chrome.runtime.MessageSender} sender
+   * @param {(resp) => void} sendResponse
    */
   runtimeMsgHandler(msg, sender, sendResponse) {
     if (msg && msg.action && msg.action === OPTIONS_SAVED) {
@@ -161,9 +165,9 @@ class TabEnvManager {
         text,
         color,
         path,
-      });
+      })
       chrome.storage.local.set({ enabled: false })
-    });
+    })
 
     chrome.browserAction.onClicked.addListener(this._onBrowserActionClicked)
 
@@ -171,8 +175,7 @@ class TabEnvManager {
   }
 }
 
-
-window.tabEnvManager = new TabEnvManager();
+window.tabEnvManager = new TabEnvManager()
 window.tabEnvManager.init()
 
 chrome.tabs.onUpdated.addListener(() => {
