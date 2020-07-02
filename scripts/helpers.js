@@ -1,23 +1,18 @@
-const OPTIONS_SAVED = 'optionsSaved'
-const EXTENSION_ENABLED = 'extensionEnabled'
-const EXTENSION_DISABLED = 'extensionDisabled'
+const ACTIONS = {
+  OPTIONS_SAVED: 'optionsSaved',
+  EXTENSION_ENABLED: 'extensionEnabled',
+  EXTENSION_DISABLED: 'extensionDisabled',
+  DELETE_ALL: 'deleteAll',
+}
 
 /**
  * @param {string} action
  * @param {Object} msg
  */
-const setAction = (action, msg = {}) => {
-  const actions = [
-    OPTIONS_SAVED,
-    EXTENSION_ENABLED,
-    EXTENSION_DISABLED
-  ]
-
-  return {
-    action: actions.find(item => item === action),
-    ...msg
-  }
-}
+const setAction = (action, msg = {}) => ({
+  action,
+  ...msg,
+})
 
 const extensionStorage = {
   /**

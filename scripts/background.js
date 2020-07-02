@@ -1,3 +1,10 @@
+const {
+  EXTENSION_ENABLED,
+  EXTENSION_DISABLED,
+  OPTIONS_SAVED,
+  DELETE_ALL,
+} = ACTIONS
+
 class TabEnvManager {
   static badgeOff = {
     color: '#ff0037',
