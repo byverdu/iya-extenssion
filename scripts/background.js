@@ -26,7 +26,6 @@ class TabEnvManager {
     this._onDisabled = this.onDisabled.bind(this)
     this._onEnabled = this.onEnabled.bind(this)
     this._runtimeMsgHandler = this.runtimeMsgHandler.bind(this)
-    this._recoverPreviousState = this.recoverPreviousState.bind(this)
 
     this.allLinks = {}
     this.allTabsIds = []
