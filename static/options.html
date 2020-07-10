@@ -13,6 +13,10 @@
       font-family: 'Fira Code', monospace;
     }
 
+    .mui-container {
+      min-width: 900px;
+    }
+
     .header {
       padding: 10px;
     }
@@ -86,6 +90,45 @@
     .mui-dropdown .mui-btn .icon {
       width: 30px;
       height: 30px;
+    }
+
+    @keyframes showPopup {
+      0% {
+        transform: translateX(0);
+      }
+
+      100% {
+        transform: translateX(-50%);
+      }
+    }
+
+    .popup {
+      position: absolute;
+      left: 50%;
+      top: 50px;
+      transition: all .5s;
+      transform: translateX(-50%);
+      animation: showPopup ease-out .1s backwards;
+      width: 400px;
+      text-align: center;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 30px;
+    }
+
+    .default {
+      border: 1px solid mediumblue;
+      background: white;
+      box-shadow: 1px 0px 8px mediumblue;
+    }
+
+    .error {
+      border: 1px solid #390804;
+      color: white;
+      background: #F44336;
+      box-shadow: 1px 0px 8px #fe462b;
     }
   </style>
 </head>

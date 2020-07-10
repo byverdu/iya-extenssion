@@ -6,34 +6,36 @@ const { OPTIONS_SAVED, DELETE_ALL } = ACTIONS
 const emptyRow = (
   rowIndex,
   savedOptions = undefined
-) => `<tr id="row-${rowIndex}" class="js-app-row">
+) => `<tr id="row-${rowIndex}" class="js-app-row" data-app-id="${
+  savedOptions?.id || ''
+}">
   <td>
   </td>
   <td>
     <div class="mui-textfield">
       <input value="${
-        savedOptions?.name ? savedOptions.name : ''
+        savedOptions?.name || ''
       }" class="js-to-validate" required name="name" id="app-name" type="text">
     </div>
   </td>
   <td>
     <div class="mui-textfield">
       <input value="${
-        savedOptions?.prod ? savedOptions.prod : ''
+        savedOptions?.prod || ''
       }" name="prod" id="app-prod" type="text">
     </div>
   </td>
   <td>
     <div class="mui-textfield">
       <input value="${
-        savedOptions?.stag ? savedOptions.stag : ''
+        savedOptions?.stag || ''
       }" name="stag" id="app-stag" type="text">
     </div>
   </td>
   <td>
     <div class="mui-textfield">
       <input value="${
-        savedOptions?.localhost ? savedOptions.localhost : ''
+        savedOptions?.localhost || ''
       }" name="localhost" id="app-localhost" type="text">
     </div>
   </td>
@@ -158,6 +160,27 @@ function reAssignRowIndexes() {
   })
 }
 
+/**
+ * @param {string} msg
+ * @param {"default" | "error" | "success"} type
+ */
+function createPopup(msg, type = 'default') {
+  const popup = document.createElement('div')
+  popup.classList.add('popup', type)
+  popup.textContent = msg
+
+  document.body.insertAdjacentElement('afterbegin', popup)
+}
+
+function removePopup(callback) {
+  document.querySelector('.popup').remove()
+  callback()
+}
+
+function generateRandomId() {
+  return window.crypto.getRandomValues(new Uint32Array(2)).join('~')
+}
+
 document.addEventListener('DOMContentLoaded', (e) => {
   const saveBtn = document.querySelector('.js-save-options')
 
@@ -192,22 +215,48 @@ document.addEventListener('DOMContentLoaded', (e) => {
   // Saving options
   saveBtn.addEventListener('click', function saveOptionsHandler(e) {
     e.preventDefault()
+
+    let id
+    const mapIds = new Map([])
     const inputs = [...document.querySelectorAll('.js-app-row')]
-      .map((item) => [...item.children])
+      .map((item, index) => {
+        if (!item.dataset.appId) {
+          const randomId = generateRandomId()
+          id = randomId
+          item.dataset.appId = randomId
+        } else {
+          id = item.dataset.appId
+        }
+        mapIds.set(index, id)
+        return [...item.children]
+      })
       .map((item) =>
         item
           .map((item) => item.querySelector('input'))
           .filter((item) => item && item.value.length > 0)
           .reduce(
-            (acc, prev) => ({
+            (acc, prev, index) => ({
               ...acc,
+              id: mapIds.get(index),
               [prev.name]: prev.value,
             }),
             {}
           )
       )
 
-    chrome.runtime.sendMessage(setAction(OPTIONS_SAVED, { inputs }))
+    chrome.runtime.sendMessage(setAction(OPTIONS_SAVED, { inputs }), (resp) => {
+      if (!chrome.runtime.lastError && resp[OPTIONS_SAVED]) {
+        createPopup('Options Saved')
+        const saveTimeout = setTimeout(removePopup, 3000, () =>
+          clearTimeout(saveTimeout)
+        )
+      } else {
+        createPopup(chrome.runtime.lastError.message, 'error')
+        const errorTimeout = setTimeout(removePopup, 3000, () =>
+          clearTimeout(errorTimeout)
+        )
+      }
+    })
     document.removeEventListener('click', saveOptionsHandler)
   })
 })

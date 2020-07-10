@@ -68,7 +68,7 @@ class TabEnvManager {
       const inputs = await this._extensionStorage.get('inputs')
       const inputsKeys = Object.keys(inputs)
 
-      if (inputsKeys.length > 0) {
+      if (inputs.length > 0) {
         const { text, color, path } = TabEnvManager.badgeOn
         this._setBadgeContent({
           text,
@@ -78,8 +78,8 @@ class TabEnvManager {
 
         this._extensionStorage.set('enabled', true)
 
-        inputsKeys.forEach((input) => {
-          const { prod, stag, localhost, icon, name } = inputs[input]
+        inputs.forEach((input) => {
+          const { prod, stag, localhost, icon, name } = input
           const selectedEnvs = envOptionsValidator({ prod, stag, localhost })
 
           selectedEnvs.forEach(async ({ env, host }) => {
@@ -160,11 +160,24 @@ class TabEnvManager {
     if (msg && msg.action && msg.action === OPTIONS_SAVED) {
       console.log(msg)
       this._extensionStorage.get('inputs').then((resp) => {
-        this._extensionStorage.set('inputs', [
-          ...msg.inputs,
-          ...(resp ? resp : []),
-        ])
+        const savedInputs = (resp || []).slice()
+        const newApps = msg.inputs.map((app) => {
+          const savedAppIndex = savedInputs.findIndex((x) => x.id === app.id)
+          if (savedAppIndex !== -1) {
+            savedInputs.splice(savedAppIndex, 1)
+          }
+          return app
+        })
+        this._extensionStorage.set(
+          'inputs',
+          [...savedInputs, ...newApps],
+          () => {
+            sendResponse({ [msg.action]: true })
+          }
+        )
       })
+
+      return true
     }
   }
 
