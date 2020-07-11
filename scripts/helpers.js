@@ -16,7 +16,6 @@ const setAction = (action, msg = {}) => ({
 
 const extensionStorage = {
   /**
-   * 
    * @param {string | string[] | Object | null} prop
    * @returns {Promise}
    */
@@ -37,10 +36,11 @@ const extensionStorage = {
   /**
    * @param {string} prop
    * @param {any} value
+   *  @param {() => void} [callback]
    */
-  set(prop, value) {
+  set(prop, value, callback) {
     console.log('helpers set', prop, value)
-    chrome.storage.local.set({ [prop]: value })
+    chrome.storage.local.set({ [prop]: value }, callback)
   },
 
   /**
@@ -49,7 +49,14 @@ const extensionStorage = {
    */
   remove(keys, callback) {
     chrome.storage.local.remove(keys, callback)
-  }
+  },
+
+  /**
+   * @param {() => void} [callback]
+   */
+  clear(callback) {
+    chrome.storage.local.clear(callback)
+  },
 }
 
 const extensionTabs = {
@@ -73,7 +80,6 @@ const extensionTabs = {
     })
   },
 }
-}
 
 const extensionMessenger = {
   /**
@@ -85,7 +91,6 @@ const extensionMessenger = {
   send(sender, id, msg, responseCallback) {
     sender.sendMessage(id, msg, responseCallback)
   },
-}
 }
 
 /**
@@ -181,7 +186,6 @@ const logger = () => {
     error: console.error,
     info: console.info,
     warn: console.warn,
-    alert: alert
   }
 
   /**

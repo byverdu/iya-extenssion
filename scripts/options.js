@@ -259,4 +259,23 @@ document.addEventListener('DOMContentLoaded', (e) => {
     })
     document.removeEventListener('click', saveOptionsHandler)
   })
+
+  // delete all items
+  document.querySelector('.js-delete-all').addEventListener('click', (_) => {
+    chrome.runtime.sendMessage(setAction(DELETE_ALL), (resp) => {
+      if (!chrome.runtime.lastError && resp[DELETE_ALL]) {
+        createPopup('Options Deleted')
+
+        const deleteAllTimeout = setTimeout(removePopup, 3000, () => {
+          clearTimeout(deleteAllTimeout)
+          window.location.reload()
+        })
+      } else {
+        createPopup(chrome.runtime.lastError.message, 'error')
+        const errorTimeout = setTimeout(removePopup, 3000, () =>
+          clearTimeout(errorTimeout)
+        )
+      }
+    })
+  })
 })

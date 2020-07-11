@@ -66,7 +66,6 @@ class TabEnvManager {
   async onDisabled() {
     try {
       const inputs = await this._extensionStorage.get('inputs')
-      const inputsKeys = Object.keys(inputs)
 
       if (inputs.length > 0) {
         const { text, color, path } = TabEnvManager.badgeOn
@@ -177,6 +176,13 @@ class TabEnvManager {
         )
       })
 
+      return true
+    }
+
+    if (msg && msg.action && msg.action === DELETE_ALL) {
+      this._extensionStorage.clear((_) => {
+        sendResponse({ [msg.action]: true })
+      })
       return true
     }
   }
