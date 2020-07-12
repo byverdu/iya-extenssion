@@ -7,6 +7,7 @@ function onEnabled({ env, icon, name }, sendResponse) {
   const links = Array.from(document.querySelectorAll('link[rel*=icon]')).map(
     (item) => item.outerHTML
   )
+  const title = document.title
 
   document.querySelectorAll('link[rel*=icon]').forEach((item) => item.remove())
 
@@ -18,12 +19,12 @@ function onEnabled({ env, icon, name }, sendResponse) {
   link.className = 'icon-rel'
   head.appendChild(link)
 
-  sendResponse(links)
+  sendResponse({ links, title })
 
   return true
 }
 
-function onDisabled(links) {
+function onDisabled({ links = [], title = '' }) {
   if (chrome.runtime.lastError) {
     tabEnvLogger.log(
       'warn',
@@ -32,6 +33,7 @@ function onDisabled(links) {
   }
   document.querySelector('.icon-rel').remove()
   const head = document.querySelector('head')
+  document.title = title
 
   links.forEach((item) => {
     head.insertAdjacentHTML('beforeend', item)
