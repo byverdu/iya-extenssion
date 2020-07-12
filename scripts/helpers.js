@@ -138,10 +138,13 @@ const getIcon = (icon = 'popcorn', color = 'black') => {
  * @returns {string}
  */
 function svgToDataUri({ icon = 'rocket', env = 'prod' }) {
+  const ScreamingGreen = '#4dffa6'
+  const Gorse = '#ffff4d'
+  const SunsetOrange = '#ff4d4d'
   const colors = {
-    prod: '#4dffa6',
-    stag: '#ffff4d',
-    localhost: '#ff4d4d',
+    prod: ScreamingGreen,
+    stag: Gorse,
+    localhost: SunsetOrange,
   }
 
   return `data:image/svg+xml,${encodeURIComponent(getIcon(icon, colors[env]))}`
