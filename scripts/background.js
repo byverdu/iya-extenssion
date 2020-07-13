@@ -3,6 +3,7 @@ const {
   EXTENSION_DISABLED,
   OPTIONS_SAVED,
   DELETE_ALL,
+  DELETE_BY_ID,
 } = ACTIONS
 
 class TabEnvManager {
@@ -174,6 +175,19 @@ class TabEnvManager {
             sendResponse({ [msg.action]: true })
           }
         )
+      })
+
+      return true
+    }
+
+    if (msg && msg.action && msg.action === DELETE_BY_ID) {
+      const { appId } = msg
+      this._extensionStorage.get('inputs').then((resp) => {
+        const savedInputs = (resp || []).slice()
+        const newApps = savedInputs.filter((app) => app.id !== appId)
+        this._extensionStorage.set('inputs', newApps, () => {
+          sendResponse({ [msg.action]: true })
+        })
       })
 
       return true

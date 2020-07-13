@@ -3,6 +3,7 @@ const ACTIONS = {
   EXTENSION_ENABLED: 'extensionEnabled',
   EXTENSION_DISABLED: 'extensionDisabled',
   DELETE_ALL: 'deleteAll',
+  DELETE_BY_ID: 'deleteById',
 }
 
 /**

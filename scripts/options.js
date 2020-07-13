@@ -1,4 +1,4 @@
-const { OPTIONS_SAVED, DELETE_ALL } = ACTIONS
+const { OPTIONS_SAVED, DELETE_ALL, DELETE_BY_ID } = ACTIONS
 
 /**
  * @param {number} rowIndex
@@ -70,7 +70,7 @@ const emptyRow = (
           .join('')}
       </ul>
     </div>
-    <input hidden name="icon" id="app-icon">
+    <input hidden value="${savedOptions?.icon || ''}" name="icon" id="app-icon">
   </td>
   <td>
     <button data-row-index=${rowIndex} class="mui-btn mui-btn--small mui-btn--danger js-delete-row">&#65794;</button>
@@ -136,10 +136,25 @@ function deleteRowHandler(saveBtn) {
     btn.addEventListener('click', function handler(e) {
       const rowIndex = e.target.dataset.rowIndex
       const rowToDelete = document.querySelector(`#row-${rowIndex}`)
+      const appId = rowToDelete.dataset.appId
 
-      rowToDelete.remove()
-      reAssignRowIndexes()
-      canOptionBeenSaved(saveBtn)
+      chrome.runtime.sendMessage(setAction(DELETE_BY_ID, { appId }), (resp) => {
+        if (!chrome.runtime.lastError && resp[DELETE_BY_ID]) {
+          rowToDelete.remove()
+          reAssignRowIndexes()
+          canOptionBeenSaved(saveBtn)
+          createPopup(`${rowIndex} Deleted`)
+
+          const deleteAllTimeout = setTimeout(removePopup, 3000, () => {
+            clearTimeout(deleteAllTimeout)
+          })
+        } else {
+          createPopup(chrome.runtime.lastError.message, 'error')
+          const errorTimeout = setTimeout(removePopup, 3000, () =>
+            clearTimeout(errorTimeout)
+          )
+        }
+      })
       document.removeEventListener('click', handler)
     })
   })
@@ -153,10 +168,14 @@ function reAssignRowIndexes() {
     row.setAttribute('id', `row-${index}`)
 
     // new index for list of icons
-    row.querySelector('.js-icons-list').setAttribute('data-test', `${index}`)
+    row
+      .querySelector('.js-icons-list')
+      .setAttribute('data-row-index', `${index}`)
 
     // new index for delete btn
-    row.querySelector('.js-delete-row').setAttribute('data-test', `${index}`)
+    row
+      .querySelector('.js-delete-row')
+      .setAttribute('data-row-index', `${index}`)
   })
 }
 
@@ -219,25 +238,25 @@ document.addEventListener('DOMContentLoaded', (e) => {
     let id
     const mapIds = new Map([])
     const inputs = [...document.querySelectorAll('.js-app-row')]
-      .map((item, index) => {
-        if (!item.dataset.appId) {
+      .map((row) => {
+        if (!row.dataset.appId) {
           const randomId = generateRandomId()
           id = randomId
-          item.dataset.appId = randomId
+          row.dataset.appId = randomId
         } else {
-          id = item.dataset.appId
+          id = row.dataset.appId
         }
-        mapIds.set(index, id)
-        return [...item.children]
+        mapIds.set(row.querySelector('input.js-to-validate').value, id)
+        return [...row.children]
       })
-      .map((item) =>
-        item
-          .map((item) => item.querySelector('input'))
-          .filter((item) => item && item.value.length > 0)
+      .map((tableCells) =>
+        tableCells
+          .map((tableCell) => tableCell.querySelector('input'))
+          .filter((input) => input && input.value.length > 0)
           .reduce(
             (acc, prev, index) => ({
               ...acc,
-              id: mapIds.get(index),
+              id: prev.name === 'name' ? mapIds.get(prev.value) : acc.id,
               [prev.name]: prev.value,
             }),
             {}
