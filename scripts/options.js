@@ -203,7 +203,7 @@ function generateRandomId() {
 document.addEventListener('DOMContentLoaded', (e) => {
   const saveBtn = document.querySelector('.js-save-options')
 
-  extensionStorage.get('inputs').then((resp) => {
+  extensionStorage.get('apps').then((resp) => {
     if (resp && resp.length > 0) {
       resp.forEach((item, index) => {
         appendNewRowApp(index, item)
@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', (e) => {
 
     let id
     const mapIds = new Map([])
-    const inputs = [...document.querySelectorAll('.js-app-row')]
+    const apps = [...document.querySelectorAll('.js-app-row')]
       .map((row) => {
         if (!row.dataset.appId) {
           const randomId = generateRandomId()
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', (e) => {
           )
       )
 
-    chrome.runtime.sendMessage(setAction(OPTIONS_SAVED, { inputs }), (resp) => {
+    chrome.runtime.sendMessage(setAction(OPTIONS_SAVED, { apps }), (resp) => {
       if (!chrome.runtime.lastError && resp[OPTIONS_SAVED]) {
         createPopup('Options Saved')
         const saveTimeout = setTimeout(removePopup, 3000, () =>

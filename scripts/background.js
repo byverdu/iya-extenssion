@@ -21,11 +21,11 @@ class TabEnvManager {
   constructor() {
     this._extensionStorage = extensionStorage
     this._extensionTabs = extensionTabs
-    this._setBadgeContent = this.setBadgeContent.bind(this)
+    this._setBadgeContent = this.setBadgeContent
     this._onBrowserActionClicked = this.onBrowserActionClicked.bind(this)
-    this._onDisabledMsgCallback = this.onDisabledMsgCallback.bind(this)
-    this._onDisabled = this.onDisabled.bind(this)
-    this._onEnabled = this.onEnabled.bind(this)
+    this._toEnableMsgCallback = this.toEnableMsgCallback.bind(this)
+    this._toEnable = this.toEnable.bind(this)
+    this._toDisable = this.toDisable.bind(this)
     this._runtimeMsgHandler = this.runtimeMsgHandler.bind(this)
 
     this.allLinks = {}
@@ -46,11 +46,11 @@ class TabEnvManager {
    * @param {string[]} newLinks
    * @param {number[]} newTabIds
    */
-  async onDisabledMsgCallback(newLinks, newTabIds) {
+  async toEnableMsgCallback(newLinks, newTabIds) {
     if (chrome.runtime.lastError) {
       tabEnvLogger.log(
         'warn',
-        `onDisabled => ${chrome.runtime.lastError.message}`
+        `toEnable => ${chrome.runtime.lastError.message}`
       )
     }
 
@@ -64,11 +64,11 @@ class TabEnvManager {
     this._extensionStorage.set('tabIds', this.allTabsIds)
   }
 
-  async onDisabled() {
+  async toEnable() {
     try {
-      const inputs = await this._extensionStorage.get('inputs')
+      const apps = await this._extensionStorage.get('apps')
 
-      if (inputs.length > 0) {
+      if (apps.length > 0) {
         const { text, color, path } = TabEnvManager.badgeOn
         this._setBadgeContent({
           text,
@@ -78,7 +78,7 @@ class TabEnvManager {
 
         this._extensionStorage.set('enabled', true)
 
-        inputs.forEach((input) => {
+        apps.forEach((input) => {
           const { prod, stag, localhost, icon, name } = input
           const selectedEnvs = envOptionsValidator({ prod, stag, localhost })
 
@@ -92,7 +92,7 @@ class TabEnvManager {
                   setAction(EXTENSION_ENABLED, { env, icon, name }),
                   (links) => {
                     console.log({ [id]: links })
-                    this._onDisabledMsgCallback({ [id]: links }, tabIds)
+                    this._toEnableMsgCallback({ [id]: links }, tabIds)
                   }
                 )
               })
@@ -107,7 +107,7 @@ class TabEnvManager {
     }
   }
 
-  async onEnabled() {
+  async toDisable() {
     const { text, color, path } = TabEnvManager.badgeOff
 
     this._setBadgeContent({
@@ -144,7 +144,7 @@ class TabEnvManager {
     try {
       const enabled = await this._extensionStorage.get('enabled')
 
-      enabled ? this.onEnabled() : this.onDisabled()
+      enabled ? this.toDisable() : this.toEnable()
     } catch (error) {
       tabEnvLogger.log('error', error)
     }
@@ -159,22 +159,18 @@ class TabEnvManager {
   runtimeMsgHandler(msg, sender, sendResponse) {
     if (msg && msg.action && msg.action === OPTIONS_SAVED) {
       console.log(msg)
-      this._extensionStorage.get('inputs').then((resp) => {
-        const savedInputs = (resp || []).slice()
-        const newApps = msg.inputs.map((app) => {
-          const savedAppIndex = savedInputs.findIndex((x) => x.id === app.id)
+      this._extensionStorage.get('apps').then((resp) => {
+        const savedApps = (resp || []).slice()
+        const newApps = msg.apps.map((app) => {
+          const savedAppIndex = savedApps.findIndex((x) => x.id === app.id)
           if (savedAppIndex !== -1) {
-            savedInputs.splice(savedAppIndex, 1)
+            savedApps.splice(savedAppIndex, 1)
           }
           return app
         })
-        this._extensionStorage.set(
-          'inputs',
-          [...savedInputs, ...newApps],
-          () => {
-            sendResponse({ [msg.action]: true })
-          }
-        )
+        this._extensionStorage.set('apps', [...savedApps, ...newApps], () => {
+          sendResponse({ [msg.action]: true })
+        })
       })
 
       return true
@@ -182,10 +178,10 @@ class TabEnvManager {
 
     if (msg && msg.action && msg.action === DELETE_BY_ID) {
       const { appId } = msg
-      this._extensionStorage.get('inputs').then((resp) => {
-        const savedInputs = (resp || []).slice()
-        const newApps = savedInputs.filter((app) => app.id !== appId)
-        this._extensionStorage.set('inputs', newApps, () => {
+      this._extensionStorage.get('apps').then((resp) => {
+        const savedApps = (resp || []).slice()
+        const newApps = savedApps.filter((app) => app.id !== appId)
+        this._extensionStorage.set('apps', newApps, () => {
           sendResponse({ [msg.action]: true })
         })
       })
@@ -211,7 +207,9 @@ class TabEnvManager {
         color,
         path,
       })
-      chrome.storage.local.set({ enabled: false })
+      chrome.storage.local.get('apps', ({ apps = [] }) => {
+        chrome.storage.local.set({ enabled: false, apps })
+      })
     })
 
     chrome.browserAction.onClicked.addListener(this._onBrowserActionClicked)
