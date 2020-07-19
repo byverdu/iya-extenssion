@@ -27,9 +27,13 @@ class TabEnvManager {
     this._toEnable = this.toEnable.bind(this)
     this._toDisable = this.toDisable.bind(this)
     this._runtimeMsgHandler = this.runtimeMsgHandler.bind(this)
+    this._tabUpdateHandler = this.tabUpdateHandler.bind(this)
+    this.init = this.init.bind(this)
 
     this.allLinks = {}
     this.allTabsIds = []
+    this.allAppsUrls = []
+    this.enabled = false
   }
 
   /**
@@ -42,26 +46,35 @@ class TabEnvManager {
   }
 
   /**
-   *
-   * @param {string[]} newLinks
-   * @param {number[]} newTabIds
+   * @typedef {Object} Links
+   * @property {string} links - new favicon
+   * @property {string} title - Document Title
+
+   * @param {Links} links
+   * @param {number} id
    */
-  async toEnableMsgCallback(newLinks, newTabIds) {
+  // async toEnableMsgCallback(newLinks, newTabIds) {
+  async toEnableMsgCallback(links, id) {
     if (chrome.runtime.lastError) {
       tabEnvLogger.log(
         'warn',
         `toEnable => ${chrome.runtime.lastError.message}`
       )
+
+      return true
     }
 
-    this.allTabsIds.push(...newTabIds)
+    this.allTabsIds.push(id)
     this.allLinks = {
       ...this.allLinks,
-      ...newLinks,
+      ...{ [id]: links.links },
     }
 
-    this._extensionStorage.set('links', this.allLinks)
-    this._extensionStorage.set('tabIds', this.allTabsIds)
+    this._extensionStorage.set('links', {
+      links: this.allLinks,
+      title: links.title,
+    })
+    this._extensionStorage.set('tabIds', [...new Set(this.allTabsIds)])
   }
 
   async toEnable() {
@@ -77,6 +90,7 @@ class TabEnvManager {
         })
 
         this._extensionStorage.set('enabled', true)
+        this.enabled = true
 
         apps.forEach((input) => {
           const { prod, stag, localhost, icon, name } = input
@@ -91,8 +105,8 @@ class TabEnvManager {
                   id,
                   setAction(EXTENSION_ENABLED, { env, icon, name }),
                   (links) => {
-                    console.log({ [id]: links })
-                    this._toEnableMsgCallback({ [id]: links }, tabIds)
+                    console.log({ [id]: links.links })
+                    this._toEnableMsgCallback(links, id)
                   }
                 )
               })
@@ -125,22 +139,33 @@ class TabEnvManager {
       ])
 
       tabIds.forEach((id) => {
+        const linksForId = links.links[id]
         chrome.tabs.sendMessage(
           id,
-          setAction(EXTENSION_DISABLED, { links: links[id] })
+          setAction(EXTENSION_DISABLED, {
+            links: {
+              links: linksForId,
+              title: links.title,
+            },
+          })
         )
       })
 
       this._extensionStorage.remove(['tabIds', 'links'], () => {
         this.allLinks = {}
         this.allTabsIds = []
+        this.enabled = false
       })
     } catch (error) {
       tabEnvLogger.log('error', error)
     }
   }
 
-  async onBrowserActionClicked() {
+  /**
+   * @param {chrome.tabs.Tab} [tab] Optional
+   */
+  async onBrowserActionClicked(tab) {
+    console.log(tab)
     try {
       const enabled = await this._extensionStorage.get('enabled')
 
@@ -168,8 +193,23 @@ class TabEnvManager {
           }
           return app
         })
-        this._extensionStorage.set('apps', [...savedApps, ...newApps], () => {
+        const apps = [...savedApps, ...newApps]
+        const appsUrls = apps
+          .reduce(
+            (prev, curr) => [
+              ...prev,
+              `${curr.id}|prod|${curr.prod}`,
+              `${curr.id}|stag|${curr.stag}`,
+              `${curr.id}|localhost|${curr.localhost}`,
+            ],
+            []
+          )
+          .filter(Boolean)
+
+        this._extensionStorage.set('apps', apps, () => {
           sendResponse({ [msg.action]: true })
+          this.allAppsUrls = appsUrls
+          this._extensionStorage.set('appsUrls', appsUrls)
         })
       })
 
@@ -197,6 +237,40 @@ class TabEnvManager {
     }
   }
 
+  /**
+   *
+   * @param {number} tabId
+   * @param {chrome.tabs.TabChangeInfo} changeInfo
+   * @param {chrome.tabs.Tab} tab
+   */
+  tabUpdateHandler(tabId, changeInfo, tab) {
+    try {
+      const url = tab.url && new URL(tab.url)
+      const savedApp = this.allAppsUrls.find((item) =>
+        item.includes(url.origin)
+      )
+
+      if (this.enabled && savedApp) {
+        const [id, env] = savedApp.split('|')
+        console.log(tab)
+        this._extensionStorage.get('apps').then((apps) => {
+          const { icon, name } = apps.find((app) => app.id === id)
+          chrome.tabs.sendMessage(
+            tabId,
+            setAction(EXTENSION_ENABLED, { env, icon, name }),
+            (links) => {
+              if (links.links.length > 1) {
+                this._toEnableMsgCallback(links, tabId)
+              }
+            }
+          )
+        })
+      }
+    } catch (e) {
+      return
+    }
+  }
+
   init() {
     tabEnvLogger.log('info', 'init extension')
     chrome.runtime.onInstalled.addListener(() => {
@@ -207,13 +281,18 @@ class TabEnvManager {
         color,
         path,
       })
-      chrome.storage.local.get('apps', ({ apps = [] }) => {
-        chrome.storage.local.set({ enabled: false, apps })
-      })
+      chrome.storage.local.get(
+        ['apps', 'appsUrls'],
+        ({ apps = [], appsUrls = [] }) => {
+          chrome.storage.local.set({ enabled: false, apps, appsUrls })
+          this.allAppsUrls = appsUrls
+        }
+      )
     })
 
     chrome.browserAction.onClicked.addListener(this._onBrowserActionClicked)
     chrome.runtime.onMessage.addListener(this._runtimeMsgHandler)
+    chrome.tabs.onUpdated.addListener(this._tabUpdateHandler)
   }
 }
 

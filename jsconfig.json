@@ -3,6 +3,7 @@
   "exclude": ["node_modules"],
   "compilerOptions": {
     "checkJs": true,
+    "downlevelIteration": true,
     "lib": ["es2015", "dom"]
   }
 }

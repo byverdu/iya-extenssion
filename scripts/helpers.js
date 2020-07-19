@@ -17,7 +17,7 @@ const setAction = (action, msg = {}) => ({
 
 const extensionStorage = {
   /**
-   * @param {string | string[] | Object | null} prop
+   * @param {string|string[]|undefined|Object} prop
    * @returns {Promise}
    */
   get(prop) {

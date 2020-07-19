@@ -46,8 +46,10 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (chrome.runtime.lastError) {
     tabEnvLogger.log('warn', `onMessage => ${chrome.runtime.lastError.message}`)
   }
-  if (msg && msg.action && msg.action === EXTENSION_ENABLED)
+  if (msg && msg.action && msg.action === EXTENSION_ENABLED) {
     onEnabled(msg, sendResponse)
-  if (msg && msg.action && msg.action === EXTENSION_DISABLED)
+  }
+  if (msg && msg.action && msg.action === EXTENSION_DISABLED) {
     onDisabled(msg.links)
+  }
 })
